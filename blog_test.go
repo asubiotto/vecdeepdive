@@ -103,13 +103,19 @@ func makeInput(numRows int, numCols int, t Datum) [][]Datum {
 	return result
 }
 
+const (
+	numRows = 4096
+	numCols = 1
+)
+
 func BenchmarkInterface(b *testing.B) {
-	scan := &tableReader{rows: makeInput(4096 /* numRows */, 1 /* numCols */, Int{})}
+	scan := &tableReader{rows: makeInput(numRows, numCols, Int{})}
 	render := mulOperator{
 		input:             scan,
 		arg:               Int{2},
 		columnsToMultiply: []int{0},
 	}
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for {
 			row := render.next()
@@ -118,5 +124,23 @@ func BenchmarkInterface(b *testing.B) {
 			}
 		}
 		scan.reset()
+	}
+}
+
+func mulInt(a, b Int) Int {
+	return Int{int: a.int * b.int}
+}
+
+func BenchmarkSpeedOfLight(b *testing.B) {
+	rows := make([]Int, numRows)
+	for i := range rows {
+		rows[i].int = i
+	}
+	arg := Int{int: 2}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for j := range rows {
+			_ = mulInt(rows[j], arg)
+		}
 	}
 }
