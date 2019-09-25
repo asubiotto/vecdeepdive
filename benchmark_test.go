@@ -26,6 +26,25 @@ func BenchmarkRowBasedInterface(b *testing.B) {
 	}
 }
 
+func BenchmarkRowBasedTyped(b *testing.B) {
+	scan := &typedTableReader{rows: makeTypedInput(numRows, numCols, Int64Type)}
+	render := mulInt64Operator{
+		input:             scan,
+		arg:               2,
+		columnsToMultiply: []int{0},
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for {
+			row := render.next()
+			if row == nil {
+				break
+			}
+		}
+		scan.reset()
+	}
+}
+
 func mulInt(a, b Int) Int {
 	return Int{int: a.int * b.int}
 }
