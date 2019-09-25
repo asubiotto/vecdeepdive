@@ -65,10 +65,12 @@ type tableReader struct {
 }
 
 func (t *tableReader) next() []Datum {
-	if len(t.rows) == 0 {
+	if t.curIdx >= len(t.rows) {
 		return nil
 	}
-	return t.rows[t.curIdx]
+	row := t.rows[t.curIdx]
+	t.curIdx++
+	return row
 }
 
 func (t *tableReader) reset() {
@@ -102,5 +104,19 @@ func makeInput(numRows int, numCols int, t Datum) [][]Datum {
 }
 
 func BenchmarkInterface(b *testing.B) {
-
+	scan := &tableReader{rows: makeInput(4096 /* numRows */, 1 /* numCols */, Int{})}
+	render := mulOperator{
+		input:             scan,
+		arg:               Int{2},
+		columnsToMultiply: []int{0},
+	}
+	for i := 0; i < b.N; i++ {
+		for {
+			row := render.next()
+			if row == nil {
+				break
+			}
+		}
+		scan.reset()
+	}
 }
