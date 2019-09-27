@@ -8,8 +8,20 @@ type Operator interface {
 	next() []Datum
 }
 
-type Datum interface {
-	Mul(Datum) Datum
+type Datum interface{}
+
+type mulFn func(a Datum, b Datum) Datum
+
+func mulIntDatums(a Datum, b Datum) Datum {
+	aInt := a.(Int).int
+	bInt := b.(Int).int
+	return Int{int: aInt * bInt}
+}
+
+func mulFloat64Datums(a Datum, b Datum) Datum {
+	aFloat := a.(Float64).float64
+	bFloat := a.(Float64).float64
+	return Float64{float64: aFloat * bFloat}
 }
 
 // Int implements the Datum interface.
@@ -34,6 +46,7 @@ func (f Float64) Mul(datum Datum) Datum {
 
 type mulOperator struct {
 	input             Operator
+	fn                mulFn
 	arg               Datum
 	columnsToMultiply []int
 }
@@ -44,7 +57,7 @@ func (m mulOperator) next() []Datum {
 		return nil
 	}
 	for _, c := range m.columnsToMultiply {
-		row[c] = row[c].Mul(m.arg)
+		row[c] = m.fn(row[c], m.arg)
 	}
 	return row
 }

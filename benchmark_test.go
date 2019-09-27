@@ -11,6 +11,7 @@ func BenchmarkRowBasedInterface(b *testing.B) {
 	scan := &tableReader{rows: makeInput(numRows, numCols, Int{})}
 	render := mulOperator{
 		input:             scan,
+		fn:                mulIntDatums,
 		arg:               Int{2},
 		columnsToMultiply: []int{0},
 	}
