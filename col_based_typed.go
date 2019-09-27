@@ -15,6 +15,8 @@ type vector interface {
 	Float64() []float64
 	// Slice returns a new vector sliced to the given indices.
 	Slice(colType T, start, end int) vector
+	// Col returns the raw underlying slice
+	Col() interface{}
 	// SetCol sets the vector to have the given data.
 	SetCol(interface{})
 }
@@ -65,6 +67,10 @@ func (c *column) Slice(colType T, start, end int) vector {
 	default:
 		panic("unhandled type")
 	}
+}
+
+func (c *column) Col() interface{} {
+	return c.col
 }
 
 func (c *column) SetCol(col interface{}) {
@@ -125,6 +131,8 @@ func (m mulFloat64ColOperator) next() colBatch {
 type typedColTableReader struct {
 	curIdx int
 	length int
+	typs []T
+	cols []vector
 	batch colBatch
 }
 
@@ -137,8 +145,8 @@ func (t *typedColTableReader) next() colBatch {
 	if endIdx > t.length {
 		endIdx = t.length
 	}
-	for i, col := range t.batch.vecs {
-		t.batch.vecs[i] = col.Slice(col.Type(), t.curIdx, endIdx)
+	for i, vec := range t.batch.vecs {
+		vec.SetCol(t.cols[i].Slice(t.typs[i], t.curIdx, endIdx).Col())
 	}
 	t.batch.size = endIdx - t.curIdx
 	t.curIdx = endIdx
@@ -151,28 +159,36 @@ func (t *typedColTableReader) reset() {
 
 // makeTypedColInput creates numRows rows of numCols each of the given type. For
 // each row, all of its columns will be its index (zero-indexed).
-func makeTypedColInput(numRows int, numCols int, t T) colBatch {
-	result := make([]vector, numCols)
-	for i := range result {
-		result[i] = newColumn(t, numRows)
+func makeTypedColInput(numRows int, numCols int, t T) typedColTableReader {
+	inputCols := make([]vector, numCols)
+	inputTyps := make([]T, numCols)
+	for i := range inputCols {
+		inputCols[i] = newColumn(t, numRows)
+		inputTyps[i] = t
 	}
 	switch t {
 	case Int64Type:
 		for i := 0; i < numCols; i++ {
-			col := result[i].Int64()
+			col := inputCols[i].Int64()
 			for j := 0; j < numRows; j++ {
-				col[j] = int64(i)
+				col[j] = int64(j)
 			}
 		}
 	case Float64Type:
 		for i := 0; i < numCols; i++ {
-			col := result[i].Float64()
+			col := inputCols[i].Float64()
 			for j := 0; j < numRows; j++ {
-				col[j] = float64(i)
+				col[j] = float64(j)
 			}
 		}
 	default:
 		panic("unhandled type")
 	}
-	return colBatch{size:numRows, vecs:result}
+
+	vecs := make([]vector, numCols)
+	for i := range vecs {
+		vecs[i] = newColumn(t, batchSize)
+	}
+	batch := colBatch{size:batchSize, vecs: vecs}
+	return typedColTableReader{length: numRows, cols: inputCols, typs: inputTyps, batch:batch}
 }

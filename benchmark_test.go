@@ -46,9 +46,9 @@ func BenchmarkRowBasedTyped(b *testing.B) {
 }
 
 func BenchmarkColBasedTyped(b *testing.B) {
-	scan := &typedColTableReader{length: numRows, batch: makeTypedColInput(numRows, numCols, Int64Type)}
+	scan := makeTypedColInput(numRows, numCols, Int64Type)
 	render := mulInt64ColOperator{
-		input:             scan,
+		input:             &scan,
 		arg:               2,
 		columnsToMultiply: []int{0},
 	}
