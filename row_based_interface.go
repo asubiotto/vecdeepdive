@@ -1,9 +1,5 @@
 package main
 
-func next() []Datum {
-	return nil
-}
-
 type Operator interface {
 	next() []Datum
 }
@@ -29,19 +25,9 @@ type Int struct {
 	int
 }
 
-func (i Int) Mul(datum Datum) Datum {
-	arg := datum.(Int).int
-	return Int{int: i.int * arg}
-}
-
 // Float64 implements the Datum interface.
 type Float64 struct {
 	float64
-}
-
-func (f Float64) Mul(datum Datum) Datum {
-	arg := datum.(Float64).float64
-	return Float64{float64: f.float64 * arg}
 }
 
 type mulOperator struct {
