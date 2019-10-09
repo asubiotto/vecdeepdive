@@ -3,7 +3,7 @@ package main
 import "testing"
 
 const (
-	numRows = 4096
+	numRows = 50000
 	numCols = 1
 )
 
