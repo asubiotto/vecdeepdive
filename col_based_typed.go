@@ -4,8 +4,6 @@ import (
 	"fmt"
 )
 
-const batchSize = 1024
-
 type vector interface {
 	// Type returns the type of data stored in this vector.
 	Type() T

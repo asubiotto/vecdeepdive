@@ -46,6 +46,25 @@ func BenchmarkRowBasedTyped(b *testing.B) {
 	}
 }
 
+func BenchmarkRowBasedTypedBatch(b *testing.B) {
+	scan := &typedBatchTableReader{rows: makeTypedBatchInput(numRows, numCols, Int64Type)}
+	render := mulInt64BatchOperator{
+		input:             scan,
+		arg:               2,
+		columnsToMultiply: []int{0},
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for {
+			row := render.next()
+			if row == nil {
+				break
+			}
+		}
+		scan.reset()
+	}
+}
+
 func BenchmarkColBasedTyped(b *testing.B) {
 	scan := makeTypedColInput(numRows, numCols, Int64Type)
 	render := mulInt64ColOperator{
