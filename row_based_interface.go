@@ -9,9 +9,9 @@ type Datum interface{}
 type mulFn func(a Datum, b Datum) Datum
 
 func mulIntDatums(a Datum, b Datum) Datum {
-	aInt := a.(Int).int
-	bInt := b.(Int).int
-	return Int{int: aInt * bInt}
+	aInt := a.(Int).int64
+	bInt := b.(Int).int64
+	return Int{int64: aInt * bInt}
 }
 
 func mulFloat64Datums(a Datum, b Datum) Datum {
@@ -22,7 +22,7 @@ func mulFloat64Datums(a Datum, b Datum) Datum {
 
 // Int implements the Datum interface.
 type Int struct {
-	int
+	int64
 }
 
 // Float64 implements the Datum interface.
@@ -77,7 +77,7 @@ func makeInput(numRows int, numCols int, t Datum) [][]Datum {
 	case Int:
 		for i := 0; i < numRows; i++ {
 			for j := 0; j < numCols; j++ {
-				result[i][j] = Int{int: i}
+				result[i][j] = Int{int64: int64(i)}
 			}
 		}
 	case Float64:
