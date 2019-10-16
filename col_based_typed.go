@@ -11,12 +11,6 @@ type vector interface {
 	Int64() []int64
 	// Float64 returns a float64 slice.
 	Float64() []float64
-	// Slice returns a new vector sliced to the given indices.
-	Slice(colType T, start, end int) vector
-	// Col returns the raw underlying slice
-	Col() interface{}
-	// SetCol sets the vector to have the given data.
-	SetCol(interface{})
 }
 
 type column struct {
@@ -46,33 +40,6 @@ func (c *column) Int64() []int64 {
 
 func (c *column) Float64() []float64 {
 	return c.col.([]float64)
-}
-
-func (c *column) Slice(colType T, start, end int) vector {
-	switch colType {
-	case Int64Type:
-		col := c.Int64()
-		return &column{
-			t:   colType,
-			col: col[start:end],
-		}
-	case Float64Type:
-		col := c.Float64()
-		return &column{
-			t:   colType,
-			col: col[start:end],
-		}
-	default:
-		panic("unhandled type")
-	}
-}
-
-func (c *column) Col() interface{} {
-	return c.col
-}
-
-func (c *column) SetCol(col interface{}) {
-	c.col = col
 }
 
 type colBatch struct {
@@ -128,65 +95,53 @@ func (m mulFloat64ColOperator) next() colBatch {
 // the batchSize when Next is called.
 type typedColTableReader struct {
 	curIdx int
-	length int
-	typs []T
-	cols []vector
-	batch colBatch
+	batches []colBatch
 }
 
 func (t *typedColTableReader) next() colBatch {
-	if t.curIdx >= t.length {
-		t.batch.size = 0
-		return t.batch
+	if t.curIdx >= len(t.batches) {
+		return colBatch{size:0}
 	}
-	endIdx := t.curIdx + batchSize
-	if endIdx > t.length {
-		endIdx = t.length
-	}
-	for i, vec := range t.batch.vecs {
-		vec.SetCol(t.cols[i].Slice(t.typs[i], t.curIdx, endIdx).Col())
-	}
-	t.batch.size = endIdx - t.curIdx
-	t.curIdx = endIdx
-	return t.batch
+	batch := t.batches[t.curIdx]
+	t.curIdx++
+	return batch
 }
 
 func (t *typedColTableReader) reset() {
 	t.curIdx = 0
 }
 
-// makeTypedColInput creates numRows rows of numCols each of the given type. For
-// each row, all of its columns will be its index (zero-indexed).
+// makeTypedColInput creates numRows rows of numCols each of the given type,
+// divided up into separate batches.
 func makeTypedColInput(numRows int, numCols int, t T) typedColTableReader {
-	inputCols := make([]vector, numCols)
-	inputTyps := make([]T, numCols)
-	for i := range inputCols {
-		inputCols[i] = newColumn(t, numRows)
-		inputTyps[i] = t
-	}
-	switch t {
-	case Int64Type:
-		for i := 0; i < numCols; i++ {
-			col := inputCols[i].Int64()
-			for j := 0; j < numRows; j++ {
-				col[j] = int64(j)
+	batches := make([]colBatch, 0)
+	curIdx := 0
+	for curIdx < numRows {
+		thisBatchSize := batchSize
+		if curIdx + thisBatchSize > numRows {
+			thisBatchSize = numRows - curIdx
+		}
+
+		vecs := make([]vector, numCols)
+		for  i := range vecs {
+			vecs[i] = newColumn(t, thisBatchSize)
+			switch t {
+			case Int64Type:
+				for j := 0; j < thisBatchSize; j++ {
+					vecs[i].Int64()[j] = int64(j)
+				}
+			case Float64Type:
+				for j := 0; j < thisBatchSize; j++ {
+					vecs[i].Float64()[j] = float64(j)
+				}
+			default:
+				panic("unhandled type")
 			}
 		}
-	case Float64Type:
-		for i := 0; i < numCols; i++ {
-			col := inputCols[i].Float64()
-			for j := 0; j < numRows; j++ {
-				col[j] = float64(j)
-			}
-		}
-	default:
-		panic("unhandled type")
+
+		batches = append(batches, colBatch{size:thisBatchSize, vecs:vecs})
+		curIdx += thisBatchSize
 	}
 
-	vecs := make([]vector, numCols)
-	for i := range vecs {
-		vecs[i] = newColumn(t, batchSize)
-	}
-	batch := colBatch{size:batchSize, vecs: vecs}
-	return typedColTableReader{length: numRows, cols: inputCols, typs: inputTyps, batch:batch}
+	return typedColTableReader{batches: batches}
 }
