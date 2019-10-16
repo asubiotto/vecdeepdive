@@ -25,7 +25,7 @@ type TypeTmplInfo struct {
 }
 
 func (t TypeTmplInfo) MulFn(l, r string) string {
-	return "TypedDatum{t: " + t.TypeName + "64Type, " + t.GoTypeName + ": " + l + "." + t.GoTypeName + "*" + r + "}"
+	return "TypedDatum{t: " + t.TypeName + "Type, " + t.GoTypeName + ": " + l + "." + t.GoTypeName + "*" + r + "}"
 }
 
 func genRowBasedTyped(w io.Writer) error {
@@ -52,11 +52,11 @@ func genRowBasedTyped(w io.Writer) error {
 
 	typesToGenerate := []TypeTmplInfo{
 		{
-			TypeName:   "Int",
+			TypeName:   "Int64",
 			GoTypeName: "int64",
 		},
 		{
-			TypeName:   "Float",
+			TypeName:   "Float64",
 			GoTypeName: "float64",
 		},
 	}

@@ -10,13 +10,13 @@ func _MULFN(_, _ interface{}) TypedDatum {
 // */}}
 
 // {{ range .}}
-type mulGenerated_TYPEOperator struct {
+type mul_TYPEOperator struct {
 	input             TypedOperator
 	arg               _GOTYPE
 	columnsToMultiply []int
 }
 
-func (m mulGenerated_TYPEOperator) next() []TypedDatum {
+func (m mul_TYPEOperator) next() []TypedDatum {
 	row := m.input.next()
 	if row == nil {
 		return nil
