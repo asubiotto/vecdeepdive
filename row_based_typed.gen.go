@@ -16,7 +16,7 @@ func (m mulInt64Operator) next() []TypedDatum {
 		return nil
 	}
 	for _, c := range m.columnsToMultiply {
-		row[c] = TypedDatum{t: Int64Type, int64: row[c].int64* m.arg}
+		row[c].int64*= m.arg
 	}
 	return row
 }
@@ -34,7 +34,7 @@ func (m mulFloat64Operator) next() []TypedDatum {
 		return nil
 	}
 	for _, c := range m.columnsToMultiply {
-		row[c] = TypedDatum{t: Float64Type, float64: row[c].float64* m.arg}
+		row[c].float64*= m.arg
 	}
 	return row
 }

@@ -3,7 +3,9 @@ package main
 // {{/*
 type _GOTYPE interface{}
 
-func _MULFN(_, _ interface{}) TypedDatum {
+// _MULFN assigns the result of the multiplication of the first and second
+// operand to the first operand.
+func _MULFN(_ TypedDatum, _ interface{}) {
 	panic("do not call from non-templated code")
 }
 
@@ -22,7 +24,7 @@ func (m mul_TYPEOperator) next() []TypedDatum {
 		return nil
 	}
 	for _, c := range m.columnsToMultiply {
-		row[c] = _MULFN(row[c], m.arg)
+		_MULFN(row[c], m.arg)
 	}
 	return row
 }
