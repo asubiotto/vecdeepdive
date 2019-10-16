@@ -16,7 +16,7 @@ func mulIntDatums(a Datum, b Datum) Datum {
 
 func mulFloat64Datums(a Datum, b Datum) Datum {
 	aFloat := a.(Float64).float64
-	bFloat := a.(Float64).float64
+	bFloat := b.(Float64).float64
 	return Float64{float64: aFloat * bFloat}
 }
 

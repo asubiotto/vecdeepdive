@@ -25,7 +25,7 @@ type TypeTmplInfo struct {
 }
 
 func (t TypeTmplInfo) MulFn(l, r string) string {
-	return "TypedDatum{t: " + t.TypeName + "Type, " + t.GoTypeName + ": " + l + "." + t.GoTypeName + "*" + r + "}"
+	return l + "." + t.GoTypeName + "*=" + r
 }
 
 func genRowBasedTyped(w io.Writer) error {
